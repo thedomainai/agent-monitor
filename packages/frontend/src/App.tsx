@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { SessionCard } from "./components/SessionCard";
 import { Dashboard } from "./components/Dashboard";
-import type { Session } from "./types";
+import type { Session } from "@agent-monitor/shared";
 
 function App() {
   const [sessions, setSessions] = useState<Session[]>([]);

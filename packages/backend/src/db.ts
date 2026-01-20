@@ -23,6 +23,7 @@ export function initDatabase(): Database.Database {
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY,
       iterm_session_id TEXT,
+      session_name TEXT,
       project_path TEXT,
       status TEXT NOT NULL DEFAULT 'active',
       started_at TEXT NOT NULL,
@@ -56,42 +57,14 @@ export function initDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_time_tracking_session_id ON time_tracking(session_id);
   `);
 
+  // Migration: Add session_name column if it doesn't exist
+  try {
+    db.exec(`ALTER TABLE sessions ADD COLUMN session_name TEXT`);
+  } catch {
+    // Column already exists, ignore
+  }
+
   console.log("✅ Database initialized at", DB_PATH);
 
   return db;
-}
-
-export type SessionStatus =
-  | "ai_active"
-  | "awaiting_approval"
-  | "awaiting_instruction"
-  | "stopped";
-
-export interface Session {
-  id: string;
-  iterm_session_id: string | null;
-  project_path: string | null;
-  status: SessionStatus;
-  started_at: string;
-  ended_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Event {
-  id: number;
-  session_id: string;
-  event_type: string;
-  tool_name: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
-export interface TimeTracking {
-  id: number;
-  session_id: string;
-  tracking_type: "ai_active" | "awaiting_approval" | "awaiting_instruction";
-  started_at: string;
-  ended_at: string | null;
-  duration_ms: number | null;
 }

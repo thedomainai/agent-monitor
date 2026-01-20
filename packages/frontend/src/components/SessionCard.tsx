@@ -1,4 +1,4 @@
-import type { Session, SessionStatus } from "../types";
+import type { Session, SessionStatus } from "@agent-monitor/shared";
 
 interface SessionCardProps {
   session: Session;
@@ -46,10 +46,16 @@ function formatDuration(ms: number | null): string {
   return `${seconds}s`;
 }
 
-function getProjectName(path: string | null): string {
-  if (!path) return "Unknown Project";
-  const parts = path.split("/");
-  return parts[parts.length - 1] || path;
+function getDisplayName(session: Session): string {
+  // Prefer session_name (iTerm2 tab name), fallback to project path
+  if (session.session_name) {
+    return session.session_name;
+  }
+  if (session.project_path) {
+    const parts = session.project_path.split("/");
+    return parts[parts.length - 1] || session.project_path;
+  }
+  return "Unknown Session";
 }
 
 export function SessionCard({ session, onFocus }: SessionCardProps) {
@@ -64,7 +70,7 @@ export function SessionCard({ session, onFocus }: SessionCardProps) {
   return (
     <div className="session-card">
       <div className="card-header">
-        <h3 className="project-name">{getProjectName(session.project_path)}</h3>
+        <h3 className="project-name">{getDisplayName(session)}</h3>
         <span
           className="status-badge"
           style={{

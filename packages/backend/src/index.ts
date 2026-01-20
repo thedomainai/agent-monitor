@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { initDatabase } from "./db.js";
+import { SessionRepository } from "./repositories/sessionRepository.js";
+import { SessionService } from "./services/sessionService.js";
 import { sessionsRouter } from "./routes/sessions.js";
 import { eventsRouter } from "./routes/events.js";
 import { focusRouter } from "./routes/focus.js";
@@ -44,9 +46,13 @@ export function broadcast(data: object) {
   });
 }
 
+// Initialize services
+const sessionRepo = new SessionRepository(db);
+const sessionService = new SessionService(sessionRepo, broadcast);
+
 // API Routes
-app.route("/api/sessions", sessionsRouter(db, broadcast));
-app.route("/api/events", eventsRouter(db, broadcast));
+app.route("/api/sessions", sessionsRouter(sessionService));
+app.route("/api/events", eventsRouter(sessionService));
 app.route("/api/focus", focusRouter());
 
 // Health check
