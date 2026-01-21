@@ -117,5 +117,15 @@ curl -s -X POST "$API_URL/api/events" \
   --max-time 2 \
   >> /tmp/agent-monitor-hook.log 2>&1 &
 
+# Register session with terminal-id extension (for Cursor/VSCode)
+if [ "$TERMINAL_TYPE" = "cursor" ] || [ "$TERMINAL_TYPE" = "vscode" ]; then
+  TERMINAL_ID_PORT="${TERMINAL_ID_PORT:-3002}"
+  # Use websocat if available, otherwise skip
+  if command -v websocat &> /dev/null; then
+    echo "{\"type\":\"register\",\"sessionId\":\"$SESSION_ID\",\"cwd\":\"$PROJECT_PATH\"}" | \
+      websocat -t "ws://localhost:$TERMINAL_ID_PORT" &
+  fi
+fi
+
 # Exit successfully to not block Gemini CLI
 exit 0

@@ -38,11 +38,14 @@ function App() {
       if (session.terminal_type === "iterm" && session.iterm_session_id) {
         await fetch(`/api/focus/iterm/${session.iterm_session_id}`, { method: "POST" });
       } else if (session.project_path) {
-        // For cursor, vscode, unknown - try to focus Cursor with project path
+        // For cursor, vscode, unknown - try to focus via extension, fallback to AppleScript
         await fetch("/api/focus/cursor", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectPath: session.project_path }),
+          body: JSON.stringify({
+            projectPath: session.project_path,
+            sessionId: session.id
+          }),
         });
       }
     } catch (error) {

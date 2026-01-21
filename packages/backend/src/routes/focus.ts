@@ -1,6 +1,44 @@
 import { Hono } from "hono";
 import { execSync } from "child_process";
+import WebSocket from "ws";
 import type { TerminalType } from "@agent-monitor/shared";
+
+const TERMINAL_ID_PORT = process.env.TERMINAL_ID_PORT || 3002;
+
+async function focusViaExtension(sessionId: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const ws = new WebSocket(`ws://localhost:${TERMINAL_ID_PORT}`);
+      const timeout = setTimeout(() => {
+        ws.close();
+        resolve(false);
+      }, 2000);
+
+      ws.on('open', () => {
+        ws.send(JSON.stringify({ type: 'focus', sessionId }));
+      });
+
+      ws.on('message', (data) => {
+        clearTimeout(timeout);
+        try {
+          const response = JSON.parse(data.toString());
+          ws.close();
+          resolve(response.success === true);
+        } catch {
+          ws.close();
+          resolve(false);
+        }
+      });
+
+      ws.on('error', () => {
+        clearTimeout(timeout);
+        resolve(false);
+      });
+    } catch {
+      resolve(false);
+    }
+  });
+}
 
 export function focusRouter() {
   const router = new Hono();
@@ -49,15 +87,23 @@ end tell
     }
   });
 
-  // Focus Cursor window by project path
+  // Focus Cursor terminal by session ID (via extension) or project path (fallback)
   router.post("/cursor", async (c) => {
-    const { projectPath } = await c.req.json<{ projectPath: string }>();
+    const { projectPath, sessionId } = await c.req.json<{ projectPath: string; sessionId?: string }>();
 
     if (!projectPath) {
       return c.json({ success: false, message: "Project path is required" }, 400);
     }
 
-    // AppleScript to focus Cursor window with matching project path
+    // Try terminal-id extension first
+    if (sessionId) {
+      const focused = await focusViaExtension(sessionId);
+      if (focused) {
+        return c.json({ success: true, message: "Focused via extension" });
+      }
+    }
+
+    // Fallback: AppleScript to focus Cursor window with matching project path
     const appleScript = `
 tell application "Cursor"
     activate
