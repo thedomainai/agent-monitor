@@ -1,16 +1,29 @@
 #!/bin/bash
 
-# Agent Monitor Hook Script
-# This script is called by Claude Code hooks to report events to the monitor
+# Agent Monitor Hook Script for Gemini CLI
+# This script is called by Gemini CLI hooks to report events to the monitor
 
 API_URL="${AGENT_MONITOR_API_URL:-http://localhost:3001}"
 EVENT_TYPE="$1"
 
+# Map Gemini CLI event names to internal event names
+case "$EVENT_TYPE" in
+  "BeforeTool")
+    EVENT_TYPE="PreToolUse"
+    ;;
+  "AfterTool")
+    EVENT_TYPE="PostToolUse"
+    ;;
+  "SessionEnd")
+    EVENT_TYPE="Stop"
+    ;;
+esac
+
 # Read the hook input from stdin
 INPUT=$(cat)
 
-# Extract session ID from Claude Code environment or generate one
-SESSION_ID="${CLAUDE_SESSION_ID:-$(echo "$PWD" | md5sum | cut -d' ' -f1)}"
+# Extract session ID from Gemini CLI environment or generate one based on PWD
+SESSION_ID="${GEMINI_SESSION_ID:-$(echo "gemini-$PWD" | md5sum | cut -d' ' -f1)}"
 
 # Detect terminal type
 TERMINAL_TYPE="unknown"
@@ -69,10 +82,10 @@ fi
 # Get current working directory as project path
 PROJECT_PATH="$PWD"
 
-# Extract tool name if available (for PreToolUse/PostToolUse events)
+# Extract tool name if available
 TOOL_NAME=""
 if [ -n "$INPUT" ]; then
-  TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)
+  TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // .toolName // empty' 2>/dev/null)
 fi
 
 # Build JSON payload
@@ -95,7 +108,7 @@ PAYLOAD=$(jq -n \
   }')
 
 # Log the payload for debugging
-echo "[$(date)] Sending $EVENT_TYPE for session $SESSION_ID" >> /tmp/agent-monitor-hook.log
+echo "[$(date)] [Gemini] Sending $EVENT_TYPE for session $SESSION_ID" >> /tmp/agent-monitor-hook.log
 
 # Send event to API
 curl -s -X POST "$API_URL/api/events" \
@@ -114,5 +127,5 @@ if [ "$TERMINAL_TYPE" = "cursor" ] || [ "$TERMINAL_TYPE" = "vscode" ]; then
   fi
 fi
 
-# Exit successfully to not block Claude Code
+# Exit successfully to not block Gemini CLI
 exit 0

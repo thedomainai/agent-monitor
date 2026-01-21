@@ -24,6 +24,7 @@ Thumbs.db
 
 # Logs
 *.log
+*.out
 npm-debug.log*
 
 # Task state
