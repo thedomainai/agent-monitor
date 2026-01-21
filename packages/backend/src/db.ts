@@ -64,6 +64,13 @@ export function initDatabase(): Database.Database {
     // Column already exists, ignore
   }
 
+  // Migration: Add terminal_type column if it doesn't exist
+  try {
+    db.exec(`ALTER TABLE sessions ADD COLUMN terminal_type TEXT DEFAULT 'unknown'`);
+  } catch {
+    // Column already exists, ignore
+  }
+
   console.log("✅ Database initialized at", DB_PATH);
 
   return db;

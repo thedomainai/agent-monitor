@@ -1,5 +1,5 @@
 import { SessionRepository } from "../repositories/sessionRepository.js";
-import type { Session, SessionStatus } from "@agent-monitor/shared";
+import type { Session, SessionStatus, TerminalType } from "@agent-monitor/shared";
 
 export class SessionService {
   constructor(private repo: SessionRepository, private broadcast: (data: object) => void) {}
@@ -34,6 +34,8 @@ export class SessionService {
           project_path: params.project_path,
           status: 'ai_active'
       });
+      // Start initial time tracking
+      this.repo.startTimeTracking(params.session_id, 'ai_active');
     }
     
     const session = this.repo.findById(params.session_id)!;
@@ -67,6 +69,7 @@ export class SessionService {
       tool_name?: string;
       payload?: object;
       iterm_session_id?: string;
+      terminal_type?: TerminalType;
       session_name?: string;
       project_path?: string;
   }): { session: Session; shouldNotify: boolean } {
@@ -77,10 +80,13 @@ export class SessionService {
           this.repo.create({
             id: params.session_id,
             iterm_session_id: params.iterm_session_id,
+            terminal_type: params.terminal_type || 'unknown',
             session_name: params.session_name,
             project_path: params.project_path,
             status: 'ai_active'
           });
+          // Start initial time tracking
+          this.repo.startTimeTracking(params.session_id, 'ai_active');
           session = this.repo.findById(params.session_id)!;
       } else if (params.session_name && !session.session_name) {
           this.repo.update(params.session_id, { session_name: params.session_name });

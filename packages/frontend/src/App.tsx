@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { SessionCard } from "./components/SessionCard";
 import { Dashboard } from "./components/Dashboard";
-import type { Session } from "@agent-monitor/shared";
+import type { Session, TerminalType } from "@agent-monitor/shared";
 
 function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const { lastMessage } = useWebSocket("ws://localhost:3001/ws");
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${protocol}//${window.location.host}/ws`;
+  const { lastMessage } = useWebSocket(wsUrl);
 
   useEffect(() => {
     fetchSessions();
@@ -31,11 +33,20 @@ function App() {
     }
   }
 
-  async function handleFocus(itermSessionId: string) {
+  async function handleFocus(session: Session) {
     try {
-      await fetch(`/api/focus/${itermSessionId}`, { method: "POST" });
+      if (session.terminal_type === "iterm" && session.iterm_session_id) {
+        await fetch(`/api/focus/iterm/${session.iterm_session_id}`, { method: "POST" });
+      } else if (session.project_path) {
+        // For cursor, vscode, unknown - try to focus Cursor with project path
+        await fetch("/api/focus/cursor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectPath: session.project_path }),
+        });
+      }
     } catch (error) {
-      console.error("Failed to focus tab:", error);
+      console.error("Failed to focus session:", error);
     }
   }
 

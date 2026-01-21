@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
@@ -16,6 +17,7 @@ const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 const db = initDatabase();
 
 // Middleware
+app.use("/*", logger());
 app.use("/*", cors());
 
 // Store for WebSocket clients

@@ -13,6 +13,7 @@ export function eventsRouter(sessionService: SessionService) {
       tool_name?: string;
       payload?: object;
       iterm_session_id?: string;
+      terminal_type?: string;
       session_name?: string;
       project_path?: string;
     }>();

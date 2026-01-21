@@ -4,9 +4,12 @@ export type SessionStatus =
   | "awaiting_instruction"
   | "stopped";
 
+export type TerminalType = "iterm" | "cursor" | "vscode" | "terminal" | "unknown";
+
 export interface BaseSession {
   id: string;
   iterm_session_id: string | null;
+  terminal_type: TerminalType;
   session_name: string | null;
   project_path: string | null;
   status: SessionStatus;

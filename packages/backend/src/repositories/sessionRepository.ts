@@ -1,5 +1,5 @@
 import type { Database } from "better-sqlite3";
-import type { Session, BaseSession, SessionStatus, Event } from "@agent-monitor/shared";
+import type { Session, BaseSession, SessionStatus, Event, TerminalType } from "@agent-monitor/shared";
 
 export class SessionRepository {
   constructor(private db: Database) {}
@@ -58,12 +58,13 @@ export class SessionRepository {
   create(session: Partial<BaseSession> & { id: string }): void {
     this.db.prepare(
         `
-        INSERT INTO sessions (id, iterm_session_id, session_name, project_path, status, started_at)
-        VALUES (?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO sessions (id, iterm_session_id, terminal_type, session_name, project_path, status, started_at)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
       `
       ).run(
         session.id,
         session.iterm_session_id || null,
+        session.terminal_type || 'unknown',
         session.session_name || null,
         session.project_path || null,
         session.status || 'ai_active'
