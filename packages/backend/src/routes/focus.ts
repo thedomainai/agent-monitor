@@ -1,9 +1,30 @@
 import { Hono } from "hono";
 import { execSync } from "child_process";
+// @ts-ignore - ws has no type declarations in this project
 import WebSocket from "ws";
-import type { TerminalType } from "@agent-monitor/shared";
 
 const TERMINAL_ID_PORT = process.env.TERMINAL_ID_PORT || 3002;
+
+// Helper function to generate iTerm2 focus AppleScript
+function generateItermFocusScript(sessionId: string): string {
+  return `
+tell application "iTerm2"
+    repeat with aWindow in windows
+        repeat with aTab in tabs of aWindow
+            repeat with aSession in sessions of aTab
+                if unique id of aSession is "${sessionId}" then
+                    select aTab
+                    select aWindow
+                    activate
+                    return "focused"
+                end if
+            end repeat
+        end repeat
+    end repeat
+    return "not_found"
+end tell
+`;
+}
 
 async function focusViaExtension(sessionId: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -18,7 +39,7 @@ async function focusViaExtension(sessionId: string): Promise<boolean> {
         ws.send(JSON.stringify({ type: 'focus', sessionId }));
       });
 
-      ws.on('message', (data) => {
+      ws.on('message', (data: Buffer) => {
         clearTimeout(timeout);
         try {
           const response = JSON.parse(data.toString());
@@ -46,24 +67,7 @@ export function focusRouter() {
   // Focus iTerm2 tab by session ID
   router.post("/iterm/:itermSessionId", (c) => {
     const { itermSessionId } = c.req.param();
-
-    const appleScript = `
-tell application "iTerm2"
-    repeat with aWindow in windows
-        repeat with aTab in tabs of aWindow
-            repeat with aSession in sessions of aTab
-                if unique id of aSession is "${itermSessionId}" then
-                    select aTab
-                    select aWindow
-                    activate
-                    return "focused"
-                end if
-            end repeat
-        end repeat
-    end repeat
-    return "not_found"
-end tell
-`;
+    const appleScript = generateItermFocusScript(itermSessionId);
 
     try {
       const result = execSync(`osascript -e '${appleScript}'`, {
@@ -129,17 +133,13 @@ end tell
       }).trim();
 
       // After focusing Cursor, try to focus terminal
-      // First try Cmd+` (toggle terminal panel), then try command palette to focus terminal
       const showTerminalScript = `
 tell application "System Events"
     tell process "Cursor"
-        -- First, try Cmd+Shift+P to open command palette
         keystroke "p" using {command down, shift down}
         delay 0.3
-        -- Type "Terminal: Focus Terminal" command
         keystroke "Terminal: Focus Terminal"
         delay 0.2
-        -- Press Enter to execute
         key code 36
     end tell
 end tell
@@ -168,50 +168,6 @@ end tell
         {
           success: false,
           message: "Failed to focus Cursor",
-          error: String(error),
-        },
-        500
-      );
-    }
-  });
-
-  // Legacy route for backward compatibility
-  router.post("/:itermSessionId", (c) => {
-    const { itermSessionId } = c.req.param();
-
-    const appleScript = `
-tell application "iTerm2"
-    repeat with aWindow in windows
-        repeat with aTab in tabs of aWindow
-            repeat with aSession in sessions of aTab
-                if unique id of aSession is "${itermSessionId}" then
-                    select aTab
-                    select aWindow
-                    activate
-                    return "focused"
-                end if
-            end repeat
-        end repeat
-    end repeat
-    return "not_found"
-end tell
-`;
-
-    try {
-      const result = execSync(`osascript -e '${appleScript}'`, {
-        encoding: "utf-8",
-      }).trim();
-
-      if (result === "focused") {
-        return c.json({ success: true, message: "Tab focused" });
-      } else {
-        return c.json({ success: false, message: "Session not found" }, 404);
-      }
-    } catch (error) {
-      return c.json(
-        {
-          success: false,
-          message: "Failed to focus tab",
           error: String(error),
         },
         500

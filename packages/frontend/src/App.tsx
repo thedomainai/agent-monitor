@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { SessionCard } from "./components/SessionCard";
 import { Dashboard } from "./components/Dashboard";
-import type { Session, TerminalType } from "@agent-monitor/shared";
+import type { Session } from "@agent-monitor/shared";
+import "./App.css";
 
 function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -82,57 +83,6 @@ function App() {
           )}
         </section>
       </main>
-
-      <style>{`
-        .app {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 24px;
-          background: var(--bg-secondary);
-          border-bottom: 1px solid var(--border-color);
-        }
-
-        .header h1 {
-          font-size: 20px;
-          font-weight: 600;
-        }
-
-        .session-count {
-          color: var(--text-secondary);
-          font-size: 14px;
-        }
-
-        .main {
-          flex: 1;
-          padding: 24px;
-        }
-
-        .sessions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-          gap: 16px;
-          margin-top: 24px;
-        }
-
-        .empty-state {
-          grid-column: 1 / -1;
-          text-align: center;
-          padding: 48px;
-          color: var(--text-secondary);
-        }
-
-        .empty-state .hint {
-          font-size: 14px;
-          margin-top: 8px;
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { execSync } from "child_process";
 import type { SessionService } from "../services/sessionService.js";
+import type { TerminalType } from "@agent-monitor/shared";
 
 export function eventsRouter(sessionService: SessionService) {
   const router = new Hono();
@@ -18,7 +19,10 @@ export function eventsRouter(sessionService: SessionService) {
       project_path?: string;
     }>();
 
-    const { session, shouldNotify } = sessionService.handleEvent(body);
+    const { session, shouldNotify } = sessionService.handleEvent({
+      ...body,
+      terminal_type: body.terminal_type as TerminalType | undefined,
+    });
 
     // Send macOS notification if awaiting approval
     if (shouldNotify) {
