@@ -54,6 +54,22 @@ function App() {
     }
   }
 
+  async function handleStop(session: Session) {
+    if (!confirm("Are you sure you want to remove this session?")) return;
+
+    try {
+      await fetch(`/api/sessions/${session.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "stopped" }),
+      });
+      // Optimistic update
+      setSessions((prev) => prev.filter((s) => s.id !== session.id));
+    } catch (error) {
+      console.error("Failed to stop session:", error);
+    }
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -70,6 +86,7 @@ function App() {
               key={session.id}
               session={session}
               onFocus={handleFocus}
+              onStop={handleStop}
             />
           ))}
           {sessions.length === 0 && (

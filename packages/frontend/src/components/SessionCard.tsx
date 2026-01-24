@@ -6,6 +6,7 @@ import "./SessionCard.css";
 interface SessionCardProps {
   session: Session;
   onFocus: (session: Session) => void;
+  onStop: (session: Session) => void;
 }
 
 const STATUS_CONFIG: Record<
@@ -45,7 +46,7 @@ function getDisplayName(session: Session): string {
   return "Unknown Session";
 }
 
-export function SessionCard({ session, onFocus }: SessionCardProps) {
+export function SessionCard({ session, onFocus, onStop }: SessionCardProps) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -82,6 +83,11 @@ export function SessionCard({ session, onFocus }: SessionCardProps) {
     }
   };
 
+  const handleStopClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStop(session);
+  };
+
   return (
     <div
       className={`session-card ${canFocus ? 'clickable' : ''}`}
@@ -96,15 +102,26 @@ export function SessionCard({ session, onFocus }: SessionCardProps) {
     >
       <div className="card-header">
         <h3 className="project-name">{getDisplayName(session)}</h3>
-        <span
-          className="status-badge"
-          style={{
-            color: statusConfig.color,
-            backgroundColor: statusConfig.bgColor,
-          }}
-        >
-          {statusConfig.label}
-        </span>
+        <div className="header-actions">
+          <span
+            className="status-badge"
+            style={{
+              color: statusConfig.color,
+              backgroundColor: statusConfig.bgColor,
+            }}
+          >
+            {statusConfig.label}
+          </span>
+          <button 
+            className="stop-button"
+            onClick={handleStopClick}
+            title="Stop/Remove Session"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="time-breakdown">
