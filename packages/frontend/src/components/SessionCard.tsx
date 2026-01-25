@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { formatDuration } from "@agent-monitor/shared";
 import type { Session, SessionStatus } from "@agent-monitor/shared";
+import "./SessionCard.css";
 
 interface SessionCardProps {
   session: Session;
   onFocus: (session: Session) => void;
+  onStop: (session: Session) => void;
 }
 
 const STATUS_CONFIG: Record<
@@ -32,21 +35,6 @@ const STATUS_CONFIG: Record<
   },
 };
 
-function formatDuration(ms: number | null): string {
-  if (!ms) return "0s";
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes % 60}m`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds % 60}s`;
-  }
-  return `${seconds}s`;
-}
-
 function getDisplayName(session: Session): string {
   if (session.session_name) {
     return session.session_name;
@@ -58,7 +46,7 @@ function getDisplayName(session: Session): string {
   return "Unknown Session";
 }
 
-export function SessionCard({ session, onFocus }: SessionCardProps) {
+export function SessionCard({ session, onFocus, onStop }: SessionCardProps) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -95,6 +83,11 @@ export function SessionCard({ session, onFocus }: SessionCardProps) {
     }
   };
 
+  const handleStopClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStop(session);
+  };
+
   return (
     <div
       className={`session-card ${canFocus ? 'clickable' : ''}`}
@@ -109,15 +102,26 @@ export function SessionCard({ session, onFocus }: SessionCardProps) {
     >
       <div className="card-header">
         <h3 className="project-name">{getDisplayName(session)}</h3>
-        <span
-          className="status-badge"
-          style={{
-            color: statusConfig.color,
-            backgroundColor: statusConfig.bgColor,
-          }}
-        >
-          {statusConfig.label}
-        </span>
+        <div className="header-actions">
+          <span
+            className="status-badge"
+            style={{
+              color: statusConfig.color,
+              backgroundColor: statusConfig.bgColor,
+            }}
+          >
+            {statusConfig.label}
+          </span>
+          <button 
+            className="stop-button"
+            onClick={handleStopClick}
+            title="Stop/Remove Session"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="time-breakdown">
@@ -161,104 +165,6 @@ export function SessionCard({ session, onFocus }: SessionCardProps) {
            session.terminal_type === "terminal" ? "Terminal" : "Unknown"}
         </span>
       </div>
-
-      <style>{`
-        .session-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          padding: 16px;
-          transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-        }
-
-        .session-card:hover {
-          border-color: var(--text-secondary);
-        }
-
-        .session-card.clickable {
-          cursor: pointer;
-        }
-
-        .session-card.clickable:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          border-color: var(--status-active);
-        }
-
-        .session-card.clickable:active {
-          transform: translateY(0);
-        }
-
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 16px;
-        }
-
-        .project-name {
-          font-size: 16px;
-          font-weight: 600;
-          word-break: break-word;
-        }
-
-        .status-badge {
-          font-size: 12px;
-          font-weight: 500;
-          padding: 4px 8px;
-          border-radius: 4px;
-          white-space: nowrap;
-        }
-
-        .time-breakdown {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
-          margin-bottom: 16px;
-        }
-
-        .time-item {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .time-item.total {
-          grid-column: span 2;
-          padding-top: 8px;
-          border-top: 1px solid var(--border-color);
-        }
-
-        .time-label {
-          font-size: 12px;
-          color: var(--text-secondary);
-        }
-
-        .time-value {
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .card-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .session-id {
-          font-size: 12px;
-          color: var(--text-secondary);
-          font-family: monospace;
-        }
-
-        .terminal-type {
-          font-size: 11px;
-          color: var(--text-secondary);
-          background: var(--bg-tertiary);
-          padding: 2px 8px;
-          border-radius: 4px;
-        }
-      `}</style>
     </div>
   );
 }

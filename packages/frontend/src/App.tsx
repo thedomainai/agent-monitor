@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { SessionCard } from "./components/SessionCard";
 import { Dashboard } from "./components/Dashboard";
-import type { Session, TerminalType } from "@agent-monitor/shared";
+import type { Session } from "@agent-monitor/shared";
+import "./App.css";
 
 function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -53,6 +54,22 @@ function App() {
     }
   }
 
+  async function handleStop(session: Session) {
+    if (!confirm("Are you sure you want to remove this session?")) return;
+
+    try {
+      await fetch(`/api/sessions/${session.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "stopped" }),
+      });
+      // Optimistic update
+      setSessions((prev) => prev.filter((s) => s.id !== session.id));
+    } catch (error) {
+      console.error("Failed to stop session:", error);
+    }
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -69,6 +86,7 @@ function App() {
               key={session.id}
               session={session}
               onFocus={handleFocus}
+              onStop={handleStop}
             />
           ))}
           {sessions.length === 0 && (
@@ -82,57 +100,6 @@ function App() {
           )}
         </section>
       </main>
-
-      <style>{`
-        .app {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 24px;
-          background: var(--bg-secondary);
-          border-bottom: 1px solid var(--border-color);
-        }
-
-        .header h1 {
-          font-size: 20px;
-          font-weight: 600;
-        }
-
-        .session-count {
-          color: var(--text-secondary);
-          font-size: 14px;
-        }
-
-        .main {
-          flex: 1;
-          padding: 24px;
-        }
-
-        .sessions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-          gap: 16px;
-          margin-top: 24px;
-        }
-
-        .empty-state {
-          grid-column: 1 / -1;
-          text-align: center;
-          padding: 48px;
-          color: var(--text-secondary);
-        }
-
-        .empty-state .hint {
-          font-size: 14px;
-          margin-top: 8px;
-        }
-      `}</style>
     </div>
   );
 }

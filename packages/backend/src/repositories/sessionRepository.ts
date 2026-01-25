@@ -1,5 +1,12 @@
 import type { Database } from "better-sqlite3";
-import type { Session, BaseSession, SessionStatus, Event, TerminalType } from "@agent-monitor/shared";
+import type { Session, BaseSession, SessionStatus, Event } from "@agent-monitor/shared";
+
+// Reusable SQL fragment for time tracking aggregation
+const TIME_TRACKING_COLUMNS = `
+  (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'ai_active') as ai_active_ms,
+  (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_approval') as awaiting_approval_ms,
+  (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_instruction') as awaiting_instruction_ms
+`;
 
 export class SessionRepository {
   constructor(private db: Database) {}
@@ -8,11 +15,7 @@ export class SessionRepository {
     return this.db
       .prepare(
         `
-      SELECT
-        s.*,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'ai_active') as ai_active_ms,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_approval') as awaiting_approval_ms,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_instruction') as awaiting_instruction_ms
+      SELECT s.*, ${TIME_TRACKING_COLUMNS}
       FROM sessions s
       WHERE s.status != 'stopped'
       ORDER BY s.updated_at DESC
@@ -26,27 +29,19 @@ export class SessionRepository {
     return this.db
       .prepare(
         `
-      SELECT
-        s.*,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'ai_active') as ai_active_ms,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_approval') as awaiting_approval_ms,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_instruction') as awaiting_instruction_ms
+      SELECT s.*, ${TIME_TRACKING_COLUMNS}
       FROM sessions s
       WHERE s.id = ?
     `
       )
       .get(id) as Session | undefined;
   }
-  
+
   findHistory(limit: number = 50): Session[] {
      return this.db
       .prepare(
         `
-      SELECT
-        s.*,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'ai_active') as ai_active_ms,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_approval') as awaiting_approval_ms,
-        (SELECT SUM(duration_ms) FROM time_tracking WHERE session_id = s.id AND tracking_type = 'awaiting_instruction') as awaiting_instruction_ms
+      SELECT s.*, ${TIME_TRACKING_COLUMNS}
       FROM sessions s
       ORDER BY s.created_at DESC
       LIMIT ?

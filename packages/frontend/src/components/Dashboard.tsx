@@ -1,22 +1,9 @@
+import { formatDuration } from "@agent-monitor/shared";
 import type { Session } from "@agent-monitor/shared";
+import "./Dashboard.css";
 
 interface DashboardProps {
   sessions: Session[];
-}
-
-function formatDuration(ms: number): string {
-  if (ms === 0) return "0s";
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes % 60}m`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds % 60}s`;
-  }
-  return `${seconds}s`;
 }
 
 export function Dashboard({ sessions }: DashboardProps) {
@@ -127,96 +114,6 @@ export function Dashboard({ sessions }: DashboardProps) {
           </div>
         </div>
       )}
-
-      <style>{`
-        .dashboard {
-          margin-bottom: 24px;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 16px;
-          margin-bottom: 24px;
-        }
-
-        .stat-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          padding: 16px;
-          text-align: center;
-        }
-
-        .stat-value {
-          font-size: 32px;
-          font-weight: 700;
-          margin-bottom: 4px;
-        }
-
-        .stat-label {
-          font-size: 12px;
-          color: var(--text-secondary);
-        }
-
-        .time-summary {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          padding: 16px;
-        }
-
-        .time-summary h3 {
-          font-size: 14px;
-          font-weight: 600;
-          margin-bottom: 12px;
-        }
-
-        .progress-bar {
-          display: flex;
-          height: 8px;
-          border-radius: 4px;
-          overflow: hidden;
-          background: var(--bg-tertiary);
-          margin-bottom: 12px;
-        }
-
-        .progress-segment {
-          transition: width 0.3s ease;
-        }
-
-        .progress-segment.ai-active {
-          background: var(--status-active);
-        }
-
-        .progress-segment.awaiting-approval {
-          background: var(--status-approval);
-        }
-
-        .progress-segment.awaiting-instruction {
-          background: var(--status-waiting);
-        }
-
-        .time-legend {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-          color: var(--text-secondary);
-        }
-
-        .legend-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-        }
-      `}</style>
     </div>
   );
 }
