@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { initDatabase } from "./db.js";
@@ -59,6 +60,12 @@ app.route("/api/focus", focusRouter());
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+// Serve static files from frontend build (production)
+app.use("/*", serveStatic({ root: "../frontend/dist" }));
+
+// Fallback to index.html for SPA routing
+app.get("*", serveStatic({ path: "../frontend/dist/index.html" }));
 
 const port = Number(process.env.PORT) || 3001;
 
